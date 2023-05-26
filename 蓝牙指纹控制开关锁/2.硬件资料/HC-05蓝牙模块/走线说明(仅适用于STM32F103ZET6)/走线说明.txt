@@ -1,0 +1,7 @@
+引脚序号		引脚名称		接线位置
+1		VCC		3.3V
+2		GND		GND
+3		TXD		PB11
+4		RXD		PB10
+5		KEY		PG8			配合AT指令使用 
+6		INT 		PC4			状态 
