@@ -36,6 +36,8 @@
 "..\..\output\bsp_ili9341_lcd.o"
 "..\..\output\fonts.o"
 "..\..\output\bsp_hc05.o"
+"..\..\output\bsp_as608.o"
+"..\..\output\rx_data_queue.o"
 "..\..\output\croutine.o"
 "..\..\output\event_groups.o"
 "..\..\output\list.o"

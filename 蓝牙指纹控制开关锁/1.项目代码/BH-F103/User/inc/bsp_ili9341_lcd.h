@@ -180,7 +180,7 @@ extern uint8_t LCD_SCAN_MODE;
 
 
 /********************************** ÉùÃ÷ ILI934 º¯Êý ***************************************/
-void                     ILI9341_Init                    ( void );
+void                     ILI9341_Config                    ( void );
 uint16_t                 ILI9341_ReadID                  ( void );
 void                     ILI9341_Rst                     ( void );
 void                     ILI9341_BackLed_Control         ( FunctionalState enumState );

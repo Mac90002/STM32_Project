@@ -10,7 +10,7 @@ BLTDev bltDevList;
 extern ReceiveData DEBUG_USART_ReceiveData;
 extern ReceiveData BLT_USART_ReceiveData;
 
-extern uint8_t a ;
+extern uint8_t Clear_Message ;
 
 static void HC05_GPIO_Config(void)
 {		
@@ -82,17 +82,8 @@ uint8_t HC05_Send_CMD(char* cmd , uint8_t clean){
 
 uint8_t HC05_Init(){
     
-    //uint8_t i;
     HC05_USART_Init();
     HC05_GPIO_Config();
-
-    // for(i=0;i<BLTDEV_MAX_NUM;i++)
-	// {
-	// 	sprintf(bltDevList.unpraseAddr[i]," ");
-	// 	sprintf(bltDevList.name[i]," ");
-
-	// }	
-    // bltDevList.num = 0;
     return HC05_Send_CMD("AT\r\n",1);
 
 }
@@ -109,7 +100,7 @@ void TransData_CtrlLED_Test(void)
     {
             
 			LED2_TOGGLE;
-			a = 0 ;
+			Clear_Message = 0 ;
 			ILI9341_Clear(0,0,240,320);
 			ILI9341_DispString_EN(20,40,"your password is right !!!");
       ILI9341_DispString_EN(20,60,"The door is already open !!!");

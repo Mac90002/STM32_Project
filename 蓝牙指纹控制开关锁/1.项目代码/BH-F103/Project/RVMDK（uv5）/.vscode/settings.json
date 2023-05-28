@@ -12,6 +12,9 @@
         "bsp_led.h": "c",
         "bsp_ili9341_lcd.h": "c",
         "bsp_task.h": "c",
-        "bsp_systick.h": "c"
+        "bsp_systick.h": "c",
+        "bsp_as608.h": "c",
+        "bsp_usart.h": "c",
+        "semphr.h": "c"
     }
 }

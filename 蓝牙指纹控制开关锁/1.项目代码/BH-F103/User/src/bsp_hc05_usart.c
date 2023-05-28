@@ -13,8 +13,8 @@ static void NVIC_Configuration(void)
 
     /* Enable the USARTy Interrupt */
     NVIC_InitStructure.NVIC_IRQChannel = BLT_USART_IRQ;
-    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority =1;
-    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 3;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
     NVIC_Init(&NVIC_InitStructure);
 }

@@ -39,13 +39,7 @@ void USART_Config(void)
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	// 完成串口的初始化配置
 	USART_Init(DEBUG_USARTx, &USART_InitStructure);
-	
-//	// 串口中断优先级配置
-//	NVIC_Configuration();
-//	
-//	// 使能串口接收中断
-//	USART_ITConfig(DEBUG_USARTx, USART_IT_RXNE, ENABLE);	
-	
+		
 	// 使能串口
 	USART_Cmd(DEBUG_USARTx, ENABLE);	    
 }
@@ -56,44 +50,6 @@ void Usart_SendByte(USART_TypeDef* pUSARTx, uint8_t data)
 	USART_SendData(pUSARTx, data);
 	while( USART_GetFlagStatus(pUSARTx, USART_FLAG_TXE) == RESET );
 }
-
-///* 发送两个字节的数据 */
-//void Usart_SendHalfWord(USART_TypeDef* pUSARTx, uint16_t data)
-//{
-//	uint8_t temp_h,temp_l;
-//	
-//	temp_h = (data&0xff00) >> 8 ;
-//	temp_l = data&0xff;
-//	
-//	USART_SendData(pUSARTx, temp_h);
-//	while( USART_GetFlagStatus(pUSARTx, USART_FLAG_TXE) == RESET );
-//	
-//	USART_SendData(pUSARTx, temp_l);
-//	while( USART_GetFlagStatus(pUSARTx, USART_FLAG_TXE) == RESET );
-//}
-
-///* 发送8位数据的数组 */
-//void Usart_SendArray(USART_TypeDef* pUSARTx, uint8_t *array,uint8_t num)
-//{
-//	uint8_t i;
-//	for( i=0; i<num; i++ )
-//  {
-//		Usart_SendByte(pUSARTx, array[i]);
-//	}
-//	while( USART_GetFlagStatus(pUSARTx, USART_FLAG_TC) == RESET );
-//}
-
-///* 发送字符串 */
-//void Usart_SendStr(USART_TypeDef* pUSARTx, uint8_t *str)
-//{
-//	uint8_t i=0;
-//	do
-//  {
-//		Usart_SendByte(pUSARTx, *(str+i));
-//		i++;
-//	}while(*(str+i) != '\0');
-//	while( USART_GetFlagStatus(pUSARTx, USART_FLAG_TC) == RESET );
-//}
 
 ///重定向c库函数printf到串口，重定向后可使用printf函数
 int fputc(int ch, FILE *f)
@@ -116,26 +72,6 @@ int fgetc(FILE *f)
 		return (int)USART_ReceiveData(DEBUG_USARTx);
 }
 
-// 发送一个字节
-void SendByte(USART_TypeDef* USARTx , u8 data )
-{
-	USART_SendData(DEBUG_USARTx,data);
-	
-	while(USART_GetFlagStatus(DEBUG_USARTx, USART_FLAG_TXE) == SET);
-	
-}
-
-//void SendArray(USART_TypeDef* USARTx ,u8 *data ,u8 num)
-//{
-//	while( num -- )
-//	{
-//		USART_SendData(DEBUG_USARTx,*data);
-//		while(USART_GetFlagStatus(DEBUG_USARTx, USART_FLAG_TXE) == SET);
-//		data++ ;
-//	}
-//	
-//	
-//}
 /* 发送8位数据的数组 */
 void Usart_SendArray(USART_TypeDef* pUSARTx, uint8_t *array,uint8_t num)
 {

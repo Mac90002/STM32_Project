@@ -613,6 +613,16 @@
               <FileType>1</FileType>
               <FilePath>..\..\User\src\bsp_hc05.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_as608.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\src\bsp_as608.c</FilePath>
+            </File>
+            <File>
+              <FileName>rx_data_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\User\src\rx_data_queue.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

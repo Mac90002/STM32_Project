@@ -604,7 +604,7 @@ static void ILI9341_REG_Config ( void )
  * @param  нч
  * @retval нч
  */
-void ILI9341_Init ( void )
+void ILI9341_Config ( void )
 {
 	ILI9341_GPIO_Config ();
 	ILI9341_FSMC_Config ();

@@ -53,3 +53,4 @@
 ..\..\output\bsp_task.o: ..\..\User\inc\fonts.h
 ..\..\output\bsp_task.o: ..\..\User\inc\bsp_hc05.h
 ..\..\output\bsp_task.o: ..\..\User\inc\bsp_hc05_usart.h
+..\..\output\bsp_task.o: ..\..\User\inc\bsp_as608.h

@@ -12,13 +12,20 @@
 #include "bsp_usart.h"
 #include "timers.h"
 #include "bsp_hc05_usart.h"
+#include "bsp_as608.h"
 
 extern volatile    uint16_t uart_p;
 extern uint8_t     uart_buff[UART_BUFF_SIZE];
+extern uint16_t    ID;
 void timer2Callback(TimerHandle_t pxTimer);
-uint8_t a = 0 ;
 
+
+uint8_t Clear_Message = 0 ;
 TaskHandle_t start_task_handler;
+QueueHandle_t semaphore_handle ;
+QueueHandle_t semaphore_handle1 ;
+TimerHandle_t tim2_handle = 0; /*周期定时器*/
+
 void start_task(void *pvParameters);
 
 TaskHandle_t task1_handler;
@@ -30,8 +37,9 @@ void task2(void *pvParameters);
 TaskHandle_t task3_handler;
 void task3(void *pvParameters);
 
-QueueHandle_t semaphore_handle ;
-TimerHandle_t tim2_handle = 0; /*周期定时器*/
+TaskHandle_t task4_handler;
+void task4(void *pvParameters);
+
 
 uint32_t i = 0 ;
 static uint32_t timer = 0 ;
@@ -50,14 +58,22 @@ void OS_Task(void)
 
 void start_task(void *pvParameters)
 {
-  taskENTER_CRITICAL(); /* 进入临界区 */
-  semaphore_handle = xSemaphoreCreateBinary() ;
-  if(semaphore_handle != NULL){
-    printf("binary create susceed\n");
-  }
-  tim2_handle = xTimerCreate("tim2",1000,pdTRUE,(void *)2,timer2Callback);
-  xTimerStart(tim2_handle,portMAX_DELAY);
-
+	
+		AS608_Connect_Test();
+		semaphore_handle = xSemaphoreCreateBinary() ;
+		semaphore_handle1 = xSemaphoreCreateBinary() ;
+		if(semaphore_handle != NULL){
+			printf("binary create susceed\n");
+		}
+		if(semaphore_handle1 != NULL){
+			printf("binary create susceed\n");
+		}
+		tim2_handle = xTimerCreate("tim2",1000,pdTRUE,(void *)2,timer2Callback);
+		xTimerStart(tim2_handle,portMAX_DELAY);
+	
+	
+	
+  taskENTER_CRITICAL(); //进入临界区
   xTaskCreate((TaskFunction_t)task1,
               (char *)"task1",
               (uint16_t)TASK1_STACK_SIZE,
@@ -79,8 +95,17 @@ void start_task(void *pvParameters)
               (UBaseType_t)TASK3_PRIO,
               (TaskHandle_t *)&task3_handler);
 
+  xTaskCreate((TaskFunction_t)task4,
+              (char *)"task4",
+              (uint16_t)TASK4_STACK_SIZE,
+              (void *)NULL,
+              (UBaseType_t)TASK4_PRIO,
+              (TaskHandle_t *)&task4_handler);
+
+              
+
   vTaskDelete(NULL);
-  taskEXIT_CRITICAL(); /* 退出临界区 */
+  taskEXIT_CRITICAL(); //退出临界区
 }
 
 
@@ -90,22 +115,22 @@ void task1(void *pvParameters)
 	
   while (1)
   {
-    err = xSemaphoreTake(semaphore_handle,1);/*获取信号量并等待1000*/
+    err = xSemaphoreTake(semaphore_handle,1000);/*获取信号量并等待1000*/
     if(err == pdTRUE){
 				err = pdFAIL ;
      if( ! IS_HC05_CONNECTED() )
      {
        HC05_Send_CMD("AT+INQ\r\n",1);//模块在查询状态，才能容易被其它设备搜索到
-			 ILI9341_DispString_EN(40,80,"Please connect Bluetooth");
+			 ILI9341_DispString_EN(20,80,"Please connect Bluetooth");
        printf("蓝牙尚未连接。请用手机打开蓝牙调试助手搜索连接蓝牙\r\n" );
      }
      else
      {
-			 if(a == 0){
+			 if(Clear_Message == 0){
 			 ILI9341_Clear(0,0,240,320);
 			 }
 			 
-			 a = 1 ;
+			 Clear_Message = 1 ;
 			 ILI9341_DispString_EN(20,40,"HC05 connection successful");
 			 ILI9341_DispString_EN(20,80,"Enter your password to open the door");
 
@@ -113,7 +138,7 @@ void task1(void *pvParameters)
      }
     }
     TransData_CtrlLED_Test();
-    vTaskDelay(100);
+    vTaskDelay(1000);
   }
 }
 	
@@ -123,7 +148,6 @@ void task2(void *pvParameters)
 {
   while (1)
   {
-		
 		if(timer == 3){
           if(semaphore_handle != NULL){
           xSemaphoreGive(semaphore_handle);
@@ -136,8 +160,22 @@ void task2(void *pvParameters)
 void task3(void *pvParameters){
 			
 		while(1){
+      ILI9341_DispString_EN(20,120,"Please Press Key1 To Input  Fingerprint");
+      ILI9341_DispString_EN(20,160,"Please Press Key2 To delete Fingerprint");
+      AS608_TASK();
+			//ILI9341_Clear(0,180,240,140);
+      
 			vTaskDelay(1000);
 		}
+}
+
+void task4(void *pvParameters){
+  while(1){
+		if(Key_Scan(KEY1_GPIO_PORT,KEY1_GPIO_PIN) == KEY_ON){
+		  xSemaphoreGive(semaphore_handle1);
+    }
+		vTaskDelay(100);
+  }
 }
 
 

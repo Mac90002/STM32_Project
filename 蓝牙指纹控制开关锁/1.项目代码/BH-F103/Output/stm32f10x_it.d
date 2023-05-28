@@ -44,3 +44,6 @@
 ..\..\output\stm32f10x_it.o: ..\..\User\inc\bsp_led.h
 ..\..\output\stm32f10x_it.o: ..\..\User\inc\bsp_SysTick.h
 ..\..\output\stm32f10x_it.o: ..\..\User\inc\bsp_hc05_usart.h
+..\..\output\stm32f10x_it.o: ..\..\User\inc\bsp_as608.h
+..\..\output\stm32f10x_it.o: ..\..\User\inc\rx_data_queue.h
+..\..\output\stm32f10x_it.o: D:\keil 5\1\ARM\ARMCC\Bin\..\include\string.h

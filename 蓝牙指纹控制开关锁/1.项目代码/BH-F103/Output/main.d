@@ -46,3 +46,6 @@
 ..\..\output\main.o: ..\..\User\inc\bsp_ili9341_lcd.h
 ..\..\output\main.o: ..\..\User\inc\fonts.h
 ..\..\output\main.o: ..\..\User\inc\fonts.h
+..\..\output\main.o: ..\..\User\inc\bsp_as608.h
+..\..\output\main.o: ..\..\User\inc\rx_data_queue.h
+..\..\output\main.o: D:\keil 5\1\ARM\ARMCC\Bin\..\include\string.h

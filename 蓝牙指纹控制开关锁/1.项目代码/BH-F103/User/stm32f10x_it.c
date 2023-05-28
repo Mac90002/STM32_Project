@@ -30,10 +30,13 @@
 #include "bsp_led.h"
 #include "bsp_SysTick.h"
 #include "bsp_hc05_usart.h"
-//#include "Create_Task_Suspend.c"
+#include "bsp_as608.h"
+#include "rx_data_queue.h"
 
 ReceiveData BLT_USART_ReceiveData;
 ReceiveData DEBUG_USART_ReceiveData;
+extern volatile    uint16_t uart_p;
+extern uint8_t     uart_buff[UART_BUFF_SIZE];
 
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -134,15 +137,9 @@ void DebugMon_Handler(void)
   * @param  None
   * @retval None
   */
-//void PendSV_Handler(void)
-//{
-//}
 
 
-//void KEY2_IRQHandler(void)
-//{
-//   
-//}
+
 ///**
 //  * @brief  This function handles SysTick Handler.
 //  * @param  None
@@ -163,55 +160,6 @@ void SysTick_Handler(void)
     #endif  /* INCLUDE_xTaskGetSchedulerState */
 }
 
-extern volatile    uint16_t uart_p;
-extern uint8_t     uart_buff[UART_BUFF_SIZE];
-
-
-//void BLT_USART_IRQHandler(void)
-//{
-//	uint8_t ucCh; 
-//    if(uart_p<UART_BUFF_SIZE)
-//    {
-//        if(USART_GetITStatus(BLT_USARTx, USART_IT_RXNE) != RESET)
-//        {
-//						FLAG = 1;
-//            uart_buff[uart_p] = USART_ReceiveData(BLT_USARTx);
-//            uart_p++;
-//        }
-//    }
-//		else
-//		{
-//			USART_ClearITPendingBit(BLT_USARTx, USART_IT_RXNE);
-//			clean_rebuff();       
-//		}
-
-////    if(USART_GetITStatus( BLT_USARTx, USART_IT_IDLE ) == SET )                                         //数据帧接收完毕
-////    {
-////        FLAG = 1;
-////        USART_ReceiveData( BLT_USARTx );                                                              //由软件序列清除中断标志位(先读USART_SR，然后读USART_DR)	
-////    }	
-//}
-
-
-void DEBUG_USART_IRQHandler(void)
-{
-		uint8_t ucCh; 
-    if(USART_GetITStatus(DEBUG_USARTx, USART_IT_RXNE) != RESET)
-    {
-			DEBUG_USART_ReceiveData.receive_data_flag = 1;
-      ucCh = USART_ReceiveData(DEBUG_USARTx);
-      if(DEBUG_USART_ReceiveData.datanum < UART_BUFF_SIZE)
-        {
-          if((ucCh != 0x0a) && (ucCh != 0x0d))
-          {
-            DEBUG_USART_ReceiveData.uart_buff[DEBUG_USART_ReceiveData.datanum] = ucCh;                 //不接收换行回车
-            DEBUG_USART_ReceiveData.datanum++;
-          }
-
-        }         
-     }
-} 
-
 
 void BLT_USART_IRQHandler(void)
 {
@@ -229,9 +177,56 @@ void BLT_USART_IRQHandler(void)
         }
       }
     }
-
-
 }
+
+
+void AS608_TouchOut_IRQHandler(void)
+{
+  /*确保是否产生了EXTI Line中断*/
+	if(EXTI_GetITStatus(AS608_TouchOut_INT_EXTI_LINE) != RESET) 
+	{
+		/*LED反转*/	
+		LED1_TOGGLE;
+
+    EXTI_ClearITPendingBit(AS608_TouchOut_INT_EXTI_LINE);   
+  }
+}
+
+
+void AS608_USART_IRQHandler(void)
+{	
+	uint8_t ucCh;
+	QUEUE_DATA_TYPE *data_p; 
+	
+	if(USART_GetITStatus(AS608_USART,USART_IT_RXNE)!=RESET)
+	{	
+		ucCh  = USART_ReceiveData( AS608_USART );
+		
+		/*获取写缓冲区指针，准备写入新数据*/
+		data_p = cbWrite(&rx_queue); 
+		
+		if (data_p != NULL)	/*若缓冲队列未满，开始传输*/
+		{		
+
+			/*往缓冲区写入数据，如使用串口接收、dma写入等方式*/
+			*(data_p->head + data_p->len) = ucCh;
+				
+			if( ++data_p->len >= QUEUE_NODE_DATA_LEN)
+			{
+				cbWriteFinish(&rx_queue);
+			}
+		}else return;	
+	}
+	
+	if ( USART_GetITStatus( AS608_USART, USART_IT_IDLE ) == SET )    /*数据帧接收完毕*/
+	{
+			/*写入缓冲区完毕*/
+			cbWriteFinish(&rx_queue);
+		  ucCh = USART_ReceiveData( AS608_USART );                     /*由软件序列清除中断标志位(先读USART_SR，然后读USART_DR)*/
+
+	}
+}
+
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */
