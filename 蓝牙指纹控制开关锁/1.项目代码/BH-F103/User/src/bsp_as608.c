@@ -9,7 +9,9 @@
 #include "semphr.h"
 #include "queue.h"
 
-extern QueueHandle_t semaphore_handle1 ;
+extern QueueHandle_t semaphore_handle1;
+extern QueueHandle_t semaphore_handle2;
+extern uint8_t detection;
 
 static uint16_t PS_Connect(uint32_t *PS_Addr);
 static void AS608_SendData(uint8_t data);
@@ -21,10 +23,8 @@ static void Sendcmd(uint8_t cmd);
 static void SendCheck(uint16_t check);
 static uint16_t ReturnFlag(uint16_t *i);
 static void ShowErrMessage(uint16_t ensure);
-static void Add_FR(void);
-
 uint32_t AS608_Addr = 0xFFFFFFFF;
-uint16_t ID ;
+uint16_t ID;
 
 void AS608_Config(void)
 {
@@ -102,9 +102,9 @@ static void NVIC_Configuration(void)
   /* 配置中断源：TouchOut线 */
   NVIC_InitStructure.NVIC_IRQChannel = AS608_TouchOut_INT_EXTI_IRQ;
   /* 抢断优先级*/
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 8;
   /* 配置子优先级 */
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 7;
   /* 初始化配置NVIC */
   NVIC_Init(&NVIC_InitStructure);
 }
@@ -432,9 +432,26 @@ uint16_t PS_StoreChar(uint8_t BufferID, uint16_t PageID)
   return sure;
 }
 
-static void Add_FR(void)
+uint16_t PS_Empty(void)
 {
-  uint16_t i, j, sure ;
+  uint16_t temp, sure, p = 0;
+  AS608_PackHead();
+  SendFlag(0x01);
+  SendLength(0x03);
+  Sendcmd(0x0d); /*存储模板指令*/
+  temp = 0x01 + 0x03 + 0x0d;
+  SendCheck(temp);
+
+  AS608_DELAY_MS(500);
+
+  sure = ReturnFlag(&p);
+
+  return sure;
+}
+
+void Add_FR(void)
+{
+  uint16_t i, j, sure;
 
   i = j = 0;
 
@@ -445,7 +462,7 @@ static void Add_FR(void)
     case 0: /*执行第1步*/
 
       i++;
-			ILI9341_Clear(0, 120, 240, 140);
+      ILI9341_Clear(0, 120, 240, 140);
       ILI9341_DispString_EN(20, 180, "Please Press Your Finger");
       sure = PS_GetImage(); /*录入图像*/
       if (sure == 0x00)
@@ -462,7 +479,7 @@ static void Add_FR(void)
             ILI9341_Clear(0, 140, 240, 180);
             ILI9341_DispString_EN(20, 180, "fingerprint already exist");
             SysTick_Delay_Ms(3000);
-						ILI9341_Clear(0, 120, 240, 180);
+            ILI9341_Clear(0, 120, 240, 180);
             return;
           }
           else
@@ -486,7 +503,7 @@ static void Add_FR(void)
 
       i++;
       ILI9341_Clear(0, 140, 240, 180);
-      ILI9341_DispString_EN(20, 180, "Please Press Key1 to input fingerprint again");
+      ILI9341_DispString_EN(20, 180, "Please input fingerprint again");
 
       sure = PS_GetImage();
       if (sure == 0x00)
@@ -515,7 +532,7 @@ static void Add_FR(void)
 
       ILI9341_Clear(0, 140, 240, 180);
       ILI9341_DispString_EN(20, 180, "Fingerprint Compare...");
-      SysTick_Delay_Ms(1000);
+      SysTick_Delay_Ms(2000);
 
       sure = PS_Match(); /*精确比对两枚指纹特征*/
       if (sure == 0x00)
@@ -538,12 +555,14 @@ static void Add_FR(void)
 
       ILI9341_Clear(0, 140, 240, 180);
       ILI9341_DispString_EN(20, 180, "The Fingerprint Module Is Being Generated...");
+      SysTick_Delay_Ms(1500);
 
       sure = PS_RegModel(); /*合并特征（生成模板）*/
       if (sure == 0x00)
       {
+        ILI9341_Clear(0, 140, 240, 180);
         ILI9341_DispString_EN(20, 180, "The Generated Succeed !!!");
-        SysTick_Delay_Ms(2000);
+        SysTick_Delay_Ms(1500);
         j = 4; /*跳转到第5步*/
       }
       else
@@ -566,8 +585,10 @@ static void Add_FR(void)
       sure = PS_StoreChar(CHAR_BUFFER2, 1); /*储存模板*/
       if (sure == 0x00)
       {
-      ILI9341_Clear(0, 140, 240, 180);
-      ILI9341_DispString_EN(20, 180, "Fingerprint Entry Successful !!!");
+        ILI9341_Clear(0, 140, 240, 180);
+        ILI9341_DispString_EN(20, 180, "Fingerprint Entry Successful !!!");
+        SysTick_Delay_Ms(3000);
+        ILI9341_Clear(0, 140, 240, 180);
 
         return;
       }
@@ -593,40 +614,63 @@ static void Add_FR(void)
 
 void AS608_TASK()
 {
-  int sure , err ;
+  uint8_t sure;
+  uint16_t sure1;
+  // xSemaphoreTakeFromISR(semaphore_handle1, NULL);
+  if (xSemaphoreTake(semaphore_handle1, 1000))
+  {
+    Add_FR();
+  }
 
-		err = xSemaphoreTake(semaphore_handle1,1000);/*获取信号量并等待1000*/
-    if(err == pdTRUE){
-			err = pdFAIL ;
-			Add_FR();
-		}
-  
-    ILI9341_DispString_EN(20, 200, "If your Fingerprints are there, run them directly");
+  if (xSemaphoreTake(semaphore_handle2, 1000))
+  {
+    sure1 = PS_Empty();
+    if (sure1 == 0x00)
+    {
+      sure1 = 1;
+      ILI9341_Clear(0, 120, 240, 140);
+      ILI9341_DispString_EN(20, 120, "All Fingerprints Already Delete");
+      SysTick_Delay_Ms(3000);
+      ILI9341_Clear(0, 120, 240, 140);
+    }
+  }
+
+  ILI9341_DispString_EN(20, 200, "If your Fingerprints are there, run them directly");
+  if (detection == 1)
+  {
+    detection = 0;
+    printf("test\r\n");
     sure = PS_GetImage(); /*录入图像*/
-    if(sure == 0x00){
+
+    if (sure == 0x00)
+    {
       sure = PS_GenChar(CHAR_BUFFER1); /*生成特征1*/
-      if(sure == 0x00){
+      if (sure == 0x00)
+      {
         sure = PS_HighSpeedSearch(CHAR_BUFFER1, 0, PS_MAXNUM, &ID);
-        if(sure == 0x00){
-        ILI9341_Clear(0, 120, 240, 200);
-        ILI9341_DispString_EN(20, 140, "The Fingerprint is Compare");
-        ILI9341_DispString_EN(20, 160, "The Door is Open !!!");
-        LED2_TOGGLE;
-        SysTick_Delay_Ms(3000);
-        LED2_TOGGLE;
-        ILI9341_Clear(0, 120, 240, 200);
-        ILI9341_DispString_EN(20, 140, "The Door is Close !!!");
-				SysTick_Delay_Ms(1000);
-				ILI9341_Clear(0, 120, 240, 200);
+        if (sure == 0x00)
+        {
+          ILI9341_Clear(0, 120, 240, 200);
+          ILI9341_DispString_EN(20, 140, "The Fingerprint is Compare");
+          ILI9341_DispString_EN(20, 160, "The Door is Open !!!");
+          GPIO_ResetBits(LED3_GPIO_PORT, LED3_GPIO_PIN);
+          SysTick_Delay_Ms(5000);
+          GPIO_SetBits(LED3_GPIO_PORT, LED3_GPIO_PIN);
+          ILI9341_Clear(0, 120, 240, 200);
+          ILI9341_DispString_EN(20, 160, "The Door is Close !!!");
+          SysTick_Delay_Ms(3000);
+          ILI9341_Clear(0, 120, 240, 200);
         }
-				else{
-					ILI9341_Clear(0, 120, 240, 200);
-					ILI9341_DispString_EN(20, 140, "The Fingerprint is Illegal !!!");
-					SysTick_Delay_Ms(2000);
-					ILI9341_Clear(0, 120, 240, 200);
-				}
+        else
+        {
+          ILI9341_Clear(0, 120, 240, 200);
+          ILI9341_DispString_EN(20, 140, "The Fingerprint is Illegal !!!");
+          SysTick_Delay_Ms(2000);
+          ILI9341_Clear(0, 120, 240, 200);
+        }
       }
     }
+  }
 }
 
 uint16_t PS_Connect(uint32_t *PS_Addr)
@@ -673,10 +717,10 @@ void AS608_Connect_Test(void)
 
   if (PS_Connect(&AS608_Addr)) /*与AS608串口通信*/
   {
-    ILI9341_DispString_EN(20, 20, "AS608 Failed Connect");
+    ILI9341_DispString_EN(20, 100, "AS608 Failed Connect");
   }
   else
   {
-    ILI9341_DispString_EN(20, 20, "AS608 Succeed Connect");
+    ILI9341_DispString_EN(20, 100, "AS608 Succeed Connect");
   }
 }

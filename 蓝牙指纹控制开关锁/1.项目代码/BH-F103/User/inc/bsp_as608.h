@@ -44,6 +44,8 @@ void AS608_Connect_Test(void);
 uint16_t PS_GetImage(void);
 uint16_t PS_GenChar(uint8_t BufferID);
 uint16_t PS_HighSpeedSearch(uint8_t BufferID, uint16_t StartPage, uint16_t PageNum, uint16_t *p);
+uint16_t PS_Empty(void);
+void Add_FR(void);
 void AS608_TASK(void);
 
 

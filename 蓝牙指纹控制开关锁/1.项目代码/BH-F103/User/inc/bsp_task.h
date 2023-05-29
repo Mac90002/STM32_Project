@@ -16,6 +16,9 @@
 #define TASK4_PRIO         5
 #define TASK4_STACK_SIZE   128
 
+#define TASK5_PRIO         6
+#define TASK5_STACK_SIZE   128
+
 
 
 void OS_Task(void);

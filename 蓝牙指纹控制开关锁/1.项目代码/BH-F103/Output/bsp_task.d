@@ -41,6 +41,7 @@
 ..\..\output\bsp_task.o: ..\..\FreeRTOS\include\mpu_wrappers.h
 ..\..\output\bsp_task.o: ..\..\FreeRTOS\include\task.h
 ..\..\output\bsp_task.o: ..\..\FreeRTOS\include\list.h
+..\..\output\bsp_task.o: D:\keil 5\1\ARM\ARMCC\Bin\..\include\stdlib.h
 ..\..\output\bsp_task.o: ..\..\User\inc\bsp_led.h
 ..\..\output\bsp_task.o: ..\..\User\inc\bsp_key.h
 ..\..\output\bsp_task.o: ..\..\FreeRTOS\include\semphr.h
